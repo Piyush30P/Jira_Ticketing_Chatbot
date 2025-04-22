@@ -1,0 +1,48 @@
+/* src/styles/TicketSummary.css */
+.ticket-summary {
+  padding-left: 220px; /* Ensure space for the sidebar */
+  padding-top: 20px;
+}
+
+h1, h2 {
+  font-family: Arial, sans-serif;
+  color: #555555;
+  text-align: center;
+}
+
+.ticket-form-container {
+  background-color: #f5f5f5;
+  padding: 20px;
+  margin-bottom: 30px;
+  border-radius: 15px; /* Rounded background */
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1); /* Light shadow for elevation */
+  width: 60%; /* Control the width */
+  margin: 0 auto; /* Center the container */
+}
+
+.ticket-form-container h2 {
+  font-size: 1.5em;
+  margin-bottom: 15px;
+}
+
+input, textarea, select {
+  width: 100%;
+  padding: 10px;
+  margin-bottom: 10px;
+  border: 1px solid #ccc;
+  border-radius: 5px;
+}
+
+button {
+  width: 100%;
+  background-color: #555555;
+  color: white;
+  border: none;
+  padding: 10px;
+  cursor: pointer;
+  border-radius: 5px;
+}
+
+button:hover {
+  background-color: #b929296e;
+}
