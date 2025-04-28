@@ -1,5 +1,5 @@
-import React, { useState, useEffect } from 'react';
-
+import React, { useState, useEffect, useCallback } from 'react';
+import axios from 'axios';
 import '../styles/Dashboard.css';
 import { 
   FaExclamationCircle, 
@@ -8,7 +8,11 @@ import {
   FaSearch,
   FaChartPie,
   FaCalendarAlt,
-  FaUserClock
+  FaUserClock,
+  FaSync,
+  FaTicketAlt,
+  FaExclamationTriangle,
+  FaEye
 } from 'react-icons/fa';
 
 const Dashboard = () => {
@@ -16,6 +20,8 @@ const Dashboard = () => {
   const [ticketsInProgress, setTicketsInProgress] = useState([]);
   const [searchTerm, setSearchTerm] = useState('');
   const [isLoading, setIsLoading] = useState(true);
+  const [isRefreshing, setIsRefreshing] = useState(false);
+  const [error, setError] = useState(null);
   const [stats, setStats] = useState({
     total: 0,
     open: 0,
@@ -23,152 +29,81 @@ const Dashboard = () => {
     done: 0,
     highPriority: 0
   });
+  const [expandedTickets, setExpandedTickets] = useState({});
 
-  useEffect(() => {
-    // Fetch tickets from the backend API (or mock data for now)
-    setTimeout(() => {
-      const mockTicketsDone = [
-        {
-          id: "JIRA-1001",
-          fields: {
-            summary: "Fix login page redirect issue",
-            status: { name: "Done" },
-            assignee: { displayName: "Jane Smith" },
-            reporter: { displayName: "John Manager" },
-            labels: ["frontend", "bug", "login"],
-            created: "2025-04-20T10:30:00",
-            updated: "2025-04-22T15:45:00",
-            priority: { name: "Medium" },
-            description: "Users are being redirected to the wrong page after login. This is affecting all users on Chrome browsers."
-          }
-        },
-        {
-          id: "JIRA-1002",
-          fields: {
-            summary: "Update privacy policy page",
-            status: { name: "Done" },
-            assignee: { displayName: "Mark Johnson" },
-            reporter: { displayName: "Legal Team" },
-            labels: ["documentation", "legal", "content"],
-            created: "2025-04-18T09:15:00",
-            updated: "2025-04-21T14:20:00",
-            priority: { name: "High" },
-            description: "The privacy policy needs to be updated to reflect the new data handling procedures. This is a legal requirement."
-          }
-        },
-        {
-          id: "JIRA-1003",
-          fields: {
-            summary: "Implement dark mode",
-            status: { name: "Done" },
-            assignee: { displayName: "Sarah Developer" },
-            reporter: { displayName: "UX Team" },
-            labels: ["frontend", "feature", "ui"],
-            created: "2025-04-15T11:45:00",
-            updated: "2025-04-19T16:30:00",
-            priority: { name: "Low" },
-            description: "Add dark mode option to user preferences. This should apply to all pages and components."
-          }
-        }
-      ];
+  // Function to fetch tickets from API
+  const fetchTickets = useCallback(async (showRefreshing = false) => {
+    if (showRefreshing) {
+      setIsRefreshing(true);
+    } else {
+      setIsLoading(true);
+    }
+    
+    setError(null);
+    
+    try {
+      const response = await axios.get('http://localhost:5000/api/tickets');
+      setTicketsDone(response.data.done || []);
+      setTicketsInProgress(response.data.inProgress || []);
       
-      const mockTicketsInProgress = [
-        {
-          id: "JIRA-1004",
-          fields: {
-            summary: "Fix image loading on product page",
-            status: { name: "In Progress" },
-            assignee: { displayName: "David Wong" },
-            reporter: { displayName: "Customer Support" },
-            labels: ["frontend", "bug", "images"],
-            created: "2025-04-23T13:20:00",
-            updated: "2025-04-24T09:10:00",
-            priority: { name: "High" },
-            description: "Product images are not loading properly on the main product listing page. This is affecting sales."
-          }
-        },
-        {
-          id: "JIRA-1005",
-          fields: {
-            summary: "API integration with payment gateway",
-            status: { name: "In Review" },
-            assignee: { displayName: "Alex Backend" },
-            reporter: { displayName: "Product Manager" },
-            labels: ["backend", "feature", "payment"],
-            created: "2025-04-22T10:00:00",
-            updated: "2025-04-24T11:30:00",
-            priority: { name: "Critical" },
-            description: "Implement the new payment gateway API to support additional payment methods."
-          }
-        },
-        {
-          id: "JIRA-1006",
-          fields: {
-            summary: "Add analytics tracking to checkout flow",
-            status: { name: "In Progress" },
-            assignee: { displayName: "Lisa Analytics" },
-            reporter: { displayName: "Marketing Team" },
-            labels: ["analytics", "feature"],
-            created: "2025-04-21T15:45:00",
-            updated: "2025-04-24T10:15:00",
-            priority: { name: "Medium" },
-            description: "Add event tracking to each step of the checkout process to better understand user drop-offs."
-          }
-        },
-        {
-          id: "JIRA-1007",
-          fields: {
-            summary: "Fix application crash on feedback form",
-            status: { name: "Blocked" },
-            assignee: { displayName: "Rob Developer" },
-            reporter: { displayName: "QA Team" },
-            labels: ["frontend", "critical", "bug"],
-            created: "2025-04-24T09:30:00",
-            updated: "2025-04-24T14:00:00",
-            priority: { name: "Critical" },
-            description: "The application crashes when users submit the feedback form with attachments. This is affecting all users."
-          }
-        }
-      ];
+      // Calculate statistics
+      const done = response.data.done || [];
+      const inProgress = response.data.inProgress || [];
+      const allTickets = [...done, ...inProgress];
       
-      setTicketsDone(mockTicketsDone);
-      setTicketsInProgress(mockTicketsInProgress);
+      // Count open tickets (assuming any not "Done" is considered open)
+      const openTickets = inProgress.filter(t => 
+        t.fields.status.name.toLowerCase() !== 'in progress'
+      );
       
-      // Calculate stats
+      // Count high priority tickets
+      const highPriorityTickets = allTickets.filter(t => 
+        t.fields.priority && 
+        (t.fields.priority.name === 'High' || t.fields.priority.name === 'Critical')
+      );
+      
       setStats({
-        total: mockTicketsDone.length + mockTicketsInProgress.length,
-        open: mockTicketsInProgress.filter(t => t.fields.status.name === "Open").length,
-        inProgress: mockTicketsInProgress.filter(t => 
-          t.fields.status.name === "In Progress" || 
-          t.fields.status.name === "In Review"
-        ).length,
-        done: mockTicketsDone.length,
-        highPriority: mockTicketsInProgress.filter(t => 
-          t.fields.priority.name === "High" || 
-          t.fields.priority.name === "Critical"
-        ).length
+        total: allTickets.length,
+        open: openTickets.length,
+        inProgress: inProgress.length,
+        done: done.length,
+        highPriority: highPriorityTickets.length
       });
       
+    } catch (err) {
+      console.error("Error fetching tickets:", err);
+      setError("Failed to load tickets. Please try again later.");
+    } finally {
       setIsLoading(false);
-    }, 1000);
+      setIsRefreshing(false);
+    }
   }, []);
+
+  useEffect(() => {
+    fetchTickets();
+    
+    // Setup auto-refresh every 5 minutes
+    const refreshInterval = setInterval(() => {
+      fetchTickets(true);
+    }, 5 * 60 * 1000);
+    
+    return () => clearInterval(refreshInterval);
+  }, [fetchTickets]);
 
   // Filter tickets based on search term
   const filteredDone = ticketsDone.filter(ticket => 
     ticket.fields.summary.toLowerCase().includes(searchTerm.toLowerCase()) ||
     ticket.id.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    ticket.fields.assignee.displayName.toLowerCase().includes(searchTerm.toLowerCase())
+    (ticket.fields.assignee && ticket.fields.assignee.displayName.toLowerCase().includes(searchTerm.toLowerCase()))
   );
   
   const filteredInProgress = ticketsInProgress.filter(ticket => 
     ticket.fields.summary.toLowerCase().includes(searchTerm.toLowerCase()) ||
     ticket.id.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    ticket.fields.assignee.displayName.toLowerCase().includes(searchTerm.toLowerCase())
+    (ticket.fields.assignee && ticket.fields.assignee.displayName.toLowerCase().includes(searchTerm.toLowerCase()))
   );
 
   // Toggle ticket details
-  const [expandedTickets, setExpandedTickets] = useState({});
-  
   const toggleDetails = (id) => {
     setExpandedTickets(prev => ({
       ...prev,
@@ -178,44 +113,63 @@ const Dashboard = () => {
 
   // Get appropriate status icon based on status name
   const getStatusIcon = (statusName) => {
-    switch(statusName.toLowerCase()) {
-      case 'done':
-        return <FaCheckCircle className="status-icon done" />;
-      case 'in progress':
-        return <FaHourglassHalf className="status-icon in-progress" />;
-      case 'in review':
-        return <FaUserClock className="status-icon in-review" />;
-      case 'blocked':
-        return <FaExclamationCircle className="status-icon blocked" />;
-      default:
-        return <FaHourglassHalf className="status-icon in-progress" />;
+    const status = statusName.toLowerCase();
+    if (status.includes('done')) {
+      return <FaCheckCircle className="status-icon done" />;
+    } else if (status.includes('progress')) {
+      return <FaHourglassHalf className="status-icon in-progress" />;
+    } else if (status.includes('review')) {
+      return <FaUserClock className="status-icon in-review" />;
+    } else if (status.includes('block')) {
+      return <FaExclamationCircle className="status-icon blocked" />;
+    } else {
+      return <FaTicketAlt className="status-icon" />;
     }
   };
 
   // Get appropriate class based on priority
   const getPriorityClass = (priority) => {
-    switch(priority.toLowerCase()) {
-      case 'critical':
-        return 'priority-critical';
-      case 'high':
-        return 'priority-high';
-      case 'medium':
-        return 'priority-medium';
-      case 'low':
-        return 'priority-low';
-      default:
-        return 'priority-medium';
+    if (!priority) return 'priority-medium';
+    
+    const priorityName = priority.toLowerCase();
+    if (priorityName.includes('critical')) {
+      return 'priority-critical';
+    } else if (priorityName.includes('high')) {
+      return 'priority-high';
+    } else if (priorityName.includes('medium')) {
+      return 'priority-medium';
+    } else if (priorityName.includes('low')) {
+      return 'priority-low';
+    } else {
+      return 'priority-medium';
     }
   };
   
   // Format date to be more readable
   const formatDate = (dateString) => {
-    const date = new Date(dateString);
-    return date.toLocaleDateString('en-US', { 
-      month: 'short', 
-      day: 'numeric',
-      year: 'numeric'
-    });
+    if (!dateString) return "Unknown";
+    
+    try {
+      const date = new Date(dateString);
+      return date.toLocaleDateString('en-US', { 
+        month: 'short', 
+        day: 'numeric',
+        year: 'numeric'
+      });
+    } catch (e) {
+      return dateString;
+    }
+  };
+
+  // Handle viewing ticket details
+  const handleViewTicket = (ticketId) => {
+    // Redirect to chat with a query to display the ticket details
+    window.location.href = `/chat?query=Tell me about ticket #${ticketId}`;
+  };
+
+  // Handle force refresh of data
+  const handleRefresh = () => {
+    fetchTickets(true);
   };
 
   if (isLoading) {
@@ -227,19 +181,41 @@ const Dashboard = () => {
     );
   }
 
+  if (error) {
+    return (
+      <div className="dashboard error">
+        <FaExclamationTriangle className="error-icon" />
+        <p>{error}</p>
+        <button onClick={handleRefresh} className="refresh-btn">
+          <FaSync /> Try Again
+        </button>
+      </div>
+    );
+  }
+
   return (
     <div className="dashboard">
       <div className="dashboard-header">
         <h1>Ticket Dashboard</h1>
-        <div className="search-container">
-          <FaSearch className="search-icon" />
-          <input
-            type="text"
-            placeholder="Search tickets by ID, summary, or assignee..."
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-            className="search-input"
-          />
+        <div className="dashboard-actions">
+          <div className="search-container">
+            <FaSearch className="search-icon" />
+            <input
+              type="text"
+              placeholder="Search tickets by ID, summary, or assignee..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="search-input"
+            />
+          </div>
+          <button 
+            className={`refresh-btn ${isRefreshing ? 'refreshing' : ''}`}
+            onClick={handleRefresh}
+            disabled={isRefreshing}
+          >
+            <FaSync className={isRefreshing ? 'fa-spin' : ''} />
+            {isRefreshing ? 'Refreshing...' : 'Refresh'}
+          </button>
         </div>
       </div>
       
@@ -295,7 +271,11 @@ const Dashboard = () => {
           
           {filteredInProgress.length === 0 ? (
             <div className="no-tickets">
-              <p>No active tickets match your search criteria.</p>
+              {searchTerm ? (
+                <p>No active tickets match your search criteria.</p>
+              ) : (
+                <p>No active tickets found. Create a new ticket to get started.</p>
+              )}
             </div>
           ) : (
             <div className="tickets-list">
@@ -307,9 +287,9 @@ const Dashboard = () => {
                       <h3>{ticket.fields.summary}</h3>
                     </div>
                     <div className="ticket-meta">
-                      <span className="ticket-id">{ticket.id}</span>
-                      <span className={`ticket-priority ${getPriorityClass(ticket.fields.priority.name)}`}>
-                        {ticket.fields.priority.name}
+                      <span className="ticket-id">#{ticket.id}</span>
+                      <span className={`ticket-priority ${getPriorityClass(ticket.fields.priority?.name)}`}>
+                        {ticket.fields.priority?.name || 'Medium'}
                       </span>
                     </div>
                   </div>
@@ -319,11 +299,11 @@ const Dashboard = () => {
                       <div className="ticket-info-grid">
                         <div className="info-item">
                           <span className="info-label">Assignee</span>
-                          <span className="info-value">{ticket.fields.assignee.displayName}</span>
+                          <span className="info-value">{ticket.fields.assignee?.displayName || 'Unassigned'}</span>
                         </div>
                         <div className="info-item">
                           <span className="info-label">Reporter</span>
-                          <span className="info-value">{ticket.fields.reporter.displayName}</span>
+                          <span className="info-value">{ticket.fields.reporter?.displayName || 'Unknown'}</span>
                         </div>
                         <div className="info-item">
                           <span className="info-label">Status</span>
@@ -338,20 +318,31 @@ const Dashboard = () => {
                         </div>
                       </div>
                       
-                      <div className="ticket-labels">
-                        {ticket.fields.labels.map((label, index) => (
-                          <span key={index} className="ticket-label">{label}</span>
-                        ))}
-                      </div>
+                      {ticket.fields.labels && ticket.fields.labels.length > 0 && (
+                        <div className="ticket-labels">
+                          {ticket.fields.labels.map((label, index) => (
+                            <span key={index} className="ticket-label">{label}</span>
+                          ))}
+                        </div>
+                      )}
                       
-                      <div className="ticket-description">
-                        <h4>Description</h4>
-                        <p>{ticket.fields.description}</p>
-                      </div>
+                      {ticket.fields.description && (
+                        <div className="ticket-description">
+                          <h4>Description</h4>
+                          <p>{typeof ticket.fields.description === 'object' ? 
+                              'Complex description (click View Details to see full content)' : 
+                              ticket.fields.description}
+                          </p>
+                        </div>
+                      )}
                       
                       <div className="ticket-actions">
-                        <button className="action-btn">View Details</button>
-                        <button className="action-btn">Update Status</button>
+                        <button 
+                          className="action-btn"
+                          onClick={() => handleViewTicket(ticket.id)}
+                        >
+                          <FaEye /> View Details
+                        </button>
                       </div>
                     </div>
                   )}
@@ -370,7 +361,11 @@ const Dashboard = () => {
           
           {filteredDone.length === 0 ? (
             <div className="no-tickets">
-              <p>No completed tickets match your search criteria.</p>
+              {searchTerm ? (
+                <p>No completed tickets match your search criteria.</p>
+              ) : (
+                <p>No completed tickets found.</p>
+              )}
             </div>
           ) : (
             <div className="tickets-list">
@@ -382,9 +377,9 @@ const Dashboard = () => {
                       <h3>{ticket.fields.summary}</h3>
                     </div>
                     <div className="ticket-meta">
-                      <span className="ticket-id">{ticket.id}</span>
-                      <span className={`ticket-priority ${getPriorityClass(ticket.fields.priority.name)}`}>
-                        {ticket.fields.priority.name}
+                      <span className="ticket-id">#{ticket.id}</span>
+                      <span className={`ticket-priority ${getPriorityClass(ticket.fields.priority?.name)}`}>
+                        {ticket.fields.priority?.name || 'Medium'}
                       </span>
                     </div>
                   </div>
@@ -394,11 +389,11 @@ const Dashboard = () => {
                       <div className="ticket-info-grid">
                         <div className="info-item">
                           <span className="info-label">Assignee</span>
-                          <span className="info-value">{ticket.fields.assignee.displayName}</span>
+                          <span className="info-value">{ticket.fields.assignee?.displayName || 'Unassigned'}</span>
                         </div>
                         <div className="info-item">
                           <span className="info-label">Reporter</span>
-                          <span className="info-value">{ticket.fields.reporter.displayName}</span>
+                          <span className="info-value">{ticket.fields.reporter?.displayName || 'Unknown'}</span>
                         </div>
                         <div className="info-item">
                           <span className="info-label">Completed</span>
@@ -416,10 +411,21 @@ const Dashboard = () => {
                         </div>
                       </div>
                       
-                      <div className="ticket-labels">
-                        {ticket.fields.labels.map((label, index) => (
-                          <span key={index} className="ticket-label">{label}</span>
-                        ))}
+                      {ticket.fields.labels && ticket.fields.labels.length > 0 && (
+                        <div className="ticket-labels">
+                          {ticket.fields.labels.map((label, index) => (
+                            <span key={index} className="ticket-label">{label}</span>
+                          ))}
+                        </div>
+                      )}
+                      
+                      <div className="ticket-actions">
+                        <button 
+                          className="action-btn"
+                          onClick={() => handleViewTicket(ticket.id)}
+                        >
+                          <FaEye /> View Details
+                        </button>
                       </div>
                     </div>
                   )}

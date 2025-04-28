@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from "react";
+import axios from "axios";
 import "../styles/ChatBox.css";
-import { FaPaperPlane, FaMicrophone, FaSpinner } from "react-icons/fa";
+import { FaPaperPlane, FaMicrophone, FaSpinner, FaRegClock, FaUserCircle, FaTag, FaExclamationCircle, FaComment, FaCalendarAlt, FaHistory, FaCheckCircle } from "react-icons/fa";
 
 const ChatBox = () => {
   const [messages, setMessages] = useState([]);
@@ -31,129 +32,234 @@ const ChatBox = () => {
     scrollToBottom();
   }, [messages]);
 
-  // Improved ticket parsing function with better regex patterns
-  const parseTicketInfo = text => {
-    // First attempt to find tickets with a consistent format
-    const ticketRegex = /\*\*Ticket ID:?\s*(\d+)\*\*\s*-\s*([^*\n]+)/gi;
-    const matches = [...text.matchAll(ticketRegex)];
-    
-    if (matches.length > 0) {
-      return matches.map(match => ({
-        id: match[1].trim(),
-        description: match[2].trim()
-      }));
-    }
-    
-    // Fallback: try to find any format that looks like Ticket ID: NUMBER - Description
-    const fallbackRegex = /(?:Ticket ID:?|Ticket)\s*(\d+)(?:[\s:-]+)([^,.\n]+)/gi;
-    const fallbackMatches = [...text.matchAll(fallbackRegex)];
-    
-    return fallbackMatches.map(match => ({
-      id: match[1].trim(),
-      description: match[2].trim()
-    }));
-  };
-
   // Function to check if message contains ticket information
   const containsTicketInfo = text => {
     return text.toLowerCase().includes("ticket id") || 
-           text.match(/\b\d{5}\b/) !== null; // Match 5-digit ticket IDs
+           text.match(/\b#?\d{5}\b/) !== null || // Match 5-digit ticket IDs with optional # prefix
+           text.match(/\bticket\b.*?\b#?\d{5}\b/i) !== null; // Match "ticket" followed by ID
   };
 
-  // Render message as regular text or ticket table
-  const renderMessage = message => {
-    if (!message.user && containsTicketInfo(message.text)) {
-      const tickets = parseTicketInfo(message.text);
-      
-      // Extract any text before the tickets list
-      let introText = "";
-      const introMatch = message.text.match(/^(.*?)(?:\*\*Ticket ID|\bTicket ID)/s);
-      if (introMatch) introText = introMatch[1].trim();
+  // Function to check if message contains ticket details (full details view)
+  const containsTicketDetails = text => {
+    return (text.includes("Here are the details for") || 
+           text.includes("details for **Ticket ID")) && 
+           text.includes("Status") && 
+           text.includes("Priority") && 
+           text.includes("Description");
+  };
 
-      return (
-        <div className="message-content">
-          {introText && <p>{introText}</p>}
-          {tickets.length > 0 ? (
-            <div className="ticket-table-container">
-              <h3>Support Tickets</h3>
-              <table className="ticket-table">
-                <thead>
-                  <tr>
-                    <th>Ticket ID</th>
-                    <th>Description</th>
-                    <th>Actions</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {tickets.map((ticket, idx) => (
-                    <tr key={idx}>
-                      <td className="ticket-id">{ticket.id}</td>
-                      <td>{ticket.description}</td>
-                      <td>
-                        <button 
-                          className="ticket-action-btn"
-                          onClick={() => handleTicketAction(ticket.id, "view")}
-                        >
-                          View
-                        </button>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          ) : (
-            <div className="original-message">{message.text}</div>
-          )}
+  // Function to parse ticket IDs from text
+  const parseTicketIds = text => {
+    const ticketPattern = /#(\d{5})\b/g;
+    const matches = [...text.matchAll(ticketPattern)];
+    return matches.map(match => match[1]);
+  };
+
+  // Function to extract ticket information blocks from the response
+  const extractTicketBlocks = text => {
+    // Look for structured ticket details sections
+    const ticketBlockPattern = /\*\*Ticket ID: (\d+)\*\*.*?(?=\*\*Ticket ID:|$)/gs;
+    const matches = [...text.matchAll(ticketBlockPattern)];
+    
+    if (matches.length === 0) return null;
+    
+    return matches.map(match => ({
+      fullText: match[0],
+      ticketId: match[1]
+    }));
+  };
+
+  // Function to parse detailed ticket information
+  const parseTicketDetails = text => {
+    // Extract ticket ID
+    const idMatch = text.match(/Ticket ID:?\s*(\d+)/i);
+    const ticketId = idMatch ? idMatch[1] : "Unknown";
+    
+    // Extract status
+    const statusMatch = text.match(/Status\*\*:\s*([^*\n]+)/i);
+    const status = statusMatch ? statusMatch[1].trim() : "Unknown";
+    
+    // Extract priority
+    const priorityMatch = text.match(/Priority\*\*:\s*([^*\n]+)/i);
+    const priority = priorityMatch ? priorityMatch[1].trim() : "Unknown";
+    
+    // Extract assignee
+    const assigneeMatch = text.match(/Assignee\*\*:\s*([^*\n]+)/i);
+    const assignee = assigneeMatch ? assigneeMatch[1].trim() : "Unassigned";
+    
+    // Extract dates
+    const createdMatch = text.match(/Created\*\*:\s*([^*\n]+)/i);
+    const created = createdMatch ? createdMatch[1].trim() : "Unknown";
+    
+    const updatedMatch = text.match(/Last Updated\*\*:\s*([^*\n]+)/i);
+    const updated = updatedMatch ? updatedMatch[1].trim() : "Unknown";
+    
+    // Extract description
+    const descriptionMatch = text.match(/Description\*\*:?\s*([^*]+?)(?:\*\*|$)/is);
+    const description = descriptionMatch ? descriptionMatch[1].trim() : "No description provided";
+    
+    // Extract comments - special handling for structured comments
+    const commentsMatch = text.match(/Recent Comments\*\*:?(.+?)(?:\*\*|$)/is);
+    const commentsText = commentsMatch ? commentsMatch[1].trim() : "";
+    
+    // Parse individual comments
+    const comments = [];
+    if (commentsText) {
+      // Match pattern like: - Name (Date): Comment or - Comment
+      const commentRegex = /-\s*(?:([^:()]+)\s*(?:\(([^)]+)\))?:)?\s*([^-]+)(?=\n-|\n\n|$)/g;
+      let commentMatch;
+      
+      while ((commentMatch = commentRegex.exec(commentsText)) !== null) {
+        if (commentMatch[1]) {
+          // Full format with author and possibly date
+          comments.push({
+            author: commentMatch[1].trim(),
+            date: commentMatch[2] ? commentMatch[2].trim() : "",
+            text: commentMatch[3].trim()
+          });
+        } else {
+          // Simple format with just text
+          comments.push({
+            author: "Team Member",
+            date: "",
+            text: commentMatch[3].trim()
+          });
+        }
+      }
+      
+      // If no structured comments found but text exists, add as single comment
+      if (comments.length === 0 && commentsText) {
+        comments.push({
+          author: "Team Member",
+          date: "",
+          text: commentsText.trim()
+        });
+      }
+    }
+    
+    return {
+      id: ticketId,
+      status,
+      priority,
+      assignee,
+      created,
+      updated,
+      description,
+      comments
+    };
+  };
+
+  // Render structured ticket details
+  const renderTicketDetails = (details) => {
+    return (
+      <div className="ticket-details-card">
+        <div className="ticket-details-header">
+          <div className="ticket-id-badge">#{details.id}</div>
+          <div className={`ticket-status-badge status-${details.status.toLowerCase().replace(/\s+/g, '-')}`}>
+            {details.status === "In Progress" ? (
+              <><FaHistory className="status-icon" /> {details.status}</>
+            ) : details.status === "Done" ? (
+              <><FaCheckCircle className="status-icon" /> {details.status}</>
+            ) : details.status === "Blocked" ? (
+              <><FaExclamationCircle className="status-icon" /> {details.status}</>
+            ) : (
+              <>{details.status}</>
+            )}
+          </div>
         </div>
-      );
-    } else {
-      // Format URLs as links
-      const formattedText = message.text.replace(
-        /(https?:\/\/[^\s]+)/g, 
-        '<a href="$1" target="_blank" rel="noopener noreferrer">$1</a>'
-      );
-      
-      return <div dangerouslySetInnerHTML={{ __html: formattedText }} />;
-    }
+        
+        <div className="ticket-details-grid">
+          <div className="ticket-detail-item">
+            <div className="detail-label">
+              <FaTag className="detail-icon" /> Priority
+            </div>
+            <div className={`detail-value priority-badge priority-${details.priority.toLowerCase()}`}>
+              {details.priority}
+            </div>
+          </div>
+          
+          <div className="ticket-detail-item">
+            <div className="detail-label">
+              <FaUserCircle className="detail-icon" /> Assignee
+            </div>
+            <div className="detail-value">{details.assignee}</div>
+          </div>
+          
+          <div className="ticket-detail-item">
+            <div className="detail-label">
+              <FaCalendarAlt className="detail-icon" /> Created
+            </div>
+            <div className="detail-value">{details.created}</div>
+          </div>
+          
+          <div className="ticket-detail-item">
+            <div className="detail-label">
+              <FaRegClock className="detail-icon" /> Updated
+            </div>
+            <div className="detail-value">{details.updated}</div>
+          </div>
+        </div>
+        
+        <div className="ticket-description">
+          <h4>Description</h4>
+          <p>{details.description}</p>
+        </div>
+        
+        {details.comments && details.comments.length > 0 && (
+          <div className="ticket-comments">
+            <h4>Recent Comments</h4>
+            {details.comments.map((comment, index) => (
+              <div className="comment" key={index}>
+                <div className="comment-header">
+                  <span className="comment-author">{comment.author}</span>
+                  {comment.date && <span className="comment-date">{comment.date}</span>}
+                </div>
+                <div className="comment-text">{comment.text}</div>
+              </div>
+            ))}
+          </div>
+        )}
+        
+        <div className="ticket-actions">
+          <button className="ticket-action-btn">Update Status</button>
+          <button className="ticket-action-btn">Add Comment</button>
+        </div>
+      </div>
+    );
   };
 
-  const handleTicketAction = (ticketId, action) => {
-    if (action === "view") {
-      const userMessage = { 
-        user: true, 
-        text: `Tell me more about ticket #${ticketId}`
-      };
+  // Format AI responses to better display ticket information
+  const formatBotResponse = (text) => {
+    // Replace #XXXXX ticket mentions with styled spans
+    const formattedText = text.replace(/#(\d{5})/g, '<span class="ticket-id-mention">#$1</span>');
+    
+    return formattedText;
+  };
+
+  // Main function to render message content
+  const renderMessage = (message) => {
+    if (!message.user) {
+      // Handle bot messages specially
       
-      setMessages([...messages, userMessage]);
+      // Case 1: This is a detailed ticket view
+      if (containsTicketDetails(message.text)) {
+        const ticketDetails = parseTicketDetails(message.text);
+        return renderTicketDetails(ticketDetails);
+      }
       
-      // Simulate API call for demo
-      setIsLoading(true);
-      
-      setTimeout(() => {
-        const ticketDetails = {
-          response: `Here are the details for **Ticket ID: ${ticketId}**:
-          
-          **Status**: In Progress
-          **Priority**: Medium
-          **Assignee**: John Doe
-          **Created**: April 25, 2025
-          **Last Updated**: April 28, 2025
-          
-          **Description**:
-          This issue was reported by the marketing team. They're experiencing intermittent problems with the feature.
-          
-          **Recent Comments**:
-          - Sarah (April 26): I've reproduced the issue on Firefox
-          - Mike (April 27): The problem appears to be related to caching
-          `
-        };
-        
-        const botMessage = { user: false, text: ticketDetails.response };
-        setMessages(prevMessages => [...prevMessages, botMessage]);
-        setIsLoading(false);
-      }, 1000);
+      // Case 2: AI response with ticket references
+      const ticketIds = parseTicketIds(message.text);
+      if (ticketIds.length > 0) {
+        // Format the response text to highlight ticket IDs
+        return <div dangerouslySetInnerHTML={{ __html: formatBotResponse(message.text) }} />;
+      }
+
+      // Case 3: Regular message - just return formatted text
+      return <div dangerouslySetInnerHTML={{ __html: formatBotResponse(message.text) }} />;
     }
+    
+    // User message - simple display
+    return <div>{message.text}</div>;
   };
 
   const handleSendMessage = async () => {
@@ -164,62 +270,18 @@ const ChatBox = () => {
       setIsLoading(true);
 
       try {
-        // For demo purposes - simulate API response for ticket-related queries
-        if (
-          input.toLowerCase().includes("ticket") ||
-          input.toLowerCase().includes("current") ||
-          input.toLowerCase().includes("issue") ||
-          input.toLowerCase().includes("open")
-        ) {
-          setTimeout(() => {
-            const demoTickets = {
-              response: `Here are the current open tickets in the system: 
-              
-              * **Ticket ID: 10023** - The storage of laptop get full 
-              * **Ticket ID: 10010** - Update website privacy policy 
-              * **Ticket ID: 10009** - Images not loading on product page 
-              * **Ticket ID: 10008** - Application crashes on submitting feedback form 
-              * **Ticket ID: 10003** - Backup database 
-              * **Ticket ID: 10001** - Add dark mode to user interface 
-              * **Ticket ID: 10000** - Error 500 on user login page`,
-            };
-            const botMessage = { user: false, text: demoTickets.response };
-            setMessages(prevMessages => [...prevMessages, botMessage]);
-            setIsLoading(false);
-          }, 1000);
-        } else if (input.toLowerCase().includes("create") || input.toLowerCase().includes("new")) {
-          setTimeout(() => {
-            const createResponse = {
-              response: `I can help you create a new ticket. Please provide the following information:
-              
-              1. Title/Summary
-              2. Description
-              3. Priority (Low, Medium, High)
-              
-              Or you can go directly to the Ticket Management page using the sidebar navigation.`
-            };
-            const botMessage = { user: false, text: createResponse.response };
-            setMessages(prevMessages => [...prevMessages, botMessage]);
-            setIsLoading(false);
-          }, 1000);
-        } else {
-          // Simulated API call
-          setTimeout(() => {
-            const genericResponse = {
-              response: `I'm your Jira ticket assistant. You can ask me about:
-              
-              - Current open tickets
-              - Specific ticket details (by ID)
-              - Creating new tickets
-              - Updating existing tickets
-              
-              How can I assist you with your ticketing needs today?`
-            };
-            const botMessage = { user: false, text: genericResponse.response };
-            setMessages(prevMessages => [...prevMessages, botMessage]);
-            setIsLoading(false);
-          }, 1000);
-        }
+        // Send message to backend
+        const response = await axios.post("http://127.0.0.1:5000/chat", {
+          message: input,
+          conversation_history: messages.map(msg => ({
+            sender: msg.user ? "user" : "bot",
+            message: msg.text,
+          })),
+        });
+
+        const botMessage = { user: false, text: response.data.response };
+        setMessages(prevMessages => [...prevMessages, botMessage]);
+        setIsLoading(false);
       } catch (error) {
         console.error("Error sending message:", error);
         setMessages(prevMessages => [

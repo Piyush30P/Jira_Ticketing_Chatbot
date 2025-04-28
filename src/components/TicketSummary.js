@@ -1,12 +1,9 @@
-import React, { useState } from 'react';
+import React from 'react';
 import TicketCreation from './TicketCreation';
-import TicketUpdate from './TicketUpdate';
-import { FaPlus, FaEdit, FaTicketAlt, FaInfoCircle } from 'react-icons/fa';
+import { FaTicketAlt, FaInfoCircle } from 'react-icons/fa';
 import '../styles/TicketSummary.css';
 
 const TicketSummary = () => {
-  const [activeTab, setActiveTab] = useState('create');
-
   return (
     <div className="ticket-summary">
       <div className="ticket-summary-header">
@@ -19,34 +16,9 @@ const TicketSummary = () => {
         </div>
       </div>
       
-      <div className="tab-container">
-        <div className="tabs">
-          <button 
-            className={`tab ${activeTab === 'create' ? 'active' : ''}`} 
-            onClick={() => setActiveTab('create')}
-          >
-            <FaPlus className="tab-icon" />
-            <span>Create Ticket</span>
-          </button>
-          <button 
-            className={`tab ${activeTab === 'update' ? 'active' : ''}`} 
-            onClick={() => setActiveTab('update')}
-          >
-            <FaEdit className="tab-icon" />
-            <span>Update Ticket</span>
-          </button>
-        </div>
-
-        <div className="tab-content">
-          {activeTab === 'create' ? (
-            <div className="ticket-form-container">
-              <TicketCreation />
-            </div>
-          ) : (
-            <div className="ticket-form-container">
-              <TicketUpdate />
-            </div>
-          )}
+      <div className="ticket-creation-section">
+        <div className="ticket-form-container">
+          <TicketCreation />
         </div>
       </div>
       
@@ -57,8 +29,8 @@ const TicketSummary = () => {
         <div className="info-content">
           <h3>About Ticket Management</h3>
           <p>
-            This page allows you to manage tickets within your Jira system. You can create new tickets for issues or tasks that need attention, 
-            or update existing tickets to change their status, assignee, or add comments.
+            This page allows you to create new tickets for issues or tasks that need attention.
+            Fill in the details in the form above to create a new ticket in the system.
           </p>
           <p>
             If you need help with specific fields or ticket types, please refer to the company's ticketing guidelines or contact your team lead.

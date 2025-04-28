@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-
+import axios from 'axios';
 import { 
   FaCheck, 
   FaTimes, 
@@ -7,7 +7,8 @@ import {
   FaExclamationTriangle,
   FaUserCircle,
   FaTag,
-  FaPaperclip
+  FaPaperclip,
+  FaSpinner
 } from 'react-icons/fa';
 import '../styles/TicketCreation.css';
 
@@ -28,6 +29,7 @@ const TicketCreation = () => {
   const [responseType, setResponseType] = useState('');
   const [newLabel, setNewLabel] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [createdTicketId, setCreatedTicketId] = useState(null);
 
   // Type options
   const typeOptions = ['Task', 'Bug', 'Story', 'Epic', 'Improvement'];
@@ -128,32 +130,41 @@ const TicketCreation = () => {
     }
     
     setIsSubmitting(true);
+    setResponseMessage('');
     
     try {
-      // For demo purposes, we'll simulate an API call
-      // In a real app, you would send this to your backend
-      setTimeout(() => {
-        // Generate a random ID for the ticket
-        const ticketId = Math.floor(10000 + Math.random() * 90000);
+      // Prepare the data to send to the backend
+      const ticketData = {
+        title: formData.title,
+        description: formData.description,
+        priority: formData.type, // In Jira, 'type' is used for Task, Bug, Story, etc.
+        assignee: formData.assignee || undefined,
+        labels: formData.labels
+      };
+      
+      // Send request to create ticket
+      const response = await axios.post('http://localhost:5000/api/create-ticket', ticketData);
+      
+      if (response.data && response.data.ticket) {
+        // Get the created ticket ID from the response
+        const newTicketId = response.data.ticket.id || 
+                           response.data.ticket.key || 
+                           Math.floor(10000 + Math.random() * 90000); // Fallback to random for demo
         
-        console.log('Ticket created:', {
-          id: ticketId,
-          ...formData,
-          createdAt: new Date().toISOString()
-        });
-        
+        setCreatedTicketId(newTicketId);
         setResponseType('success');
-        setResponseMessage(`Ticket #${ticketId} created successfully!`);
+        setResponseMessage(`Ticket #${newTicketId} created successfully!`);
         
         // Reset form after successful submission
         setFormData(initialFormState);
-        setIsSubmitting(false);
-      }, 1500);
-      
+      } else {
+        throw new Error('Invalid response from server');
+      }
     } catch (error) {
       console.error('Error creating ticket:', error);
       setResponseType('error');
       setResponseMessage(error.response?.data?.error || 'Failed to create the ticket. Please try again.');
+    } finally {
       setIsSubmitting(false);
     }
   };
@@ -162,13 +173,14 @@ const TicketCreation = () => {
     setFormData(initialFormState);
     setFormErrors({});
     setResponseMessage('');
+    setCreatedTicketId(null);
   };
 
   return (
     <div className="ticket-creation-container">
       <div className="form-header">
         <h2>Create a New Ticket</h2>
-        <p>Fill in the details below to create a new support ticket</p>
+        <p>Fill in the details below to create a new Jira ticket</p>
       </div>
       
       {responseMessage && (
@@ -179,6 +191,14 @@ const TicketCreation = () => {
             <FaExclamationTriangle className="response-icon" />
           )}
           <span>{responseMessage}</span>
+          {responseType === 'success' && createdTicketId && (
+            <button 
+              className="view-ticket-btn"
+              onClick={() => window.location.href = `/chat?query=Tell me about ticket #${createdTicketId}`}
+            >
+              View Ticket
+            </button>
+          )}
           <button className="close-btn" onClick={() => setResponseMessage('')}>
             <FaTimes />
           </button>
@@ -365,7 +385,7 @@ const TicketCreation = () => {
           <button type="submit" className="submit-btn" disabled={isSubmitting}>
             {isSubmitting ? (
               <>
-                <span className="spinner"></span>
+                <FaSpinner className="spinner" />
                 Creating...
               </>
             ) : (
