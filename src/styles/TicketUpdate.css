@@ -1,41 +1,458 @@
-.ticket-creation, .ticket-update {
-    padding-left: 220px;
-    padding-top: 20px;
-  }
-  
-  form {
-    display: flex;
-    flex-direction: column;
-    max-width: 400px;
-    margin: 0 auto;
+/* src/styles/TicketUpdate.css */
+.ticket-update-container {
+  max-width: 900px;
+  margin: 0 auto;
+  padding: 2rem;
+  background-color: #ffffff;
+  border-radius: 12px;
+  box-shadow: 0 5px 20px rgba(0, 0, 0, 0.05);
+}
+
+.form-header {
+  margin-bottom: 2rem;
+  text-align: center;
+}
+
+.form-header h2 {
+  font-size: 1.8rem;
+  color: #2c3e50;
+  margin-bottom: 0.5rem;
+}
+
+.form-header p {
+  color: #7f8c8d;
+  font-size: 1rem;
+}
+
+/* Form layout */
+.ticket-form {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+.form-row {
+  display: flex;
+  gap: 1.5rem;
+  flex-wrap: wrap;
+}
+
+.form-group {
+  flex: 1;
+  min-width: 250px;
+}
+
+.form-group.full-width {
+  flex-basis: 100%;
+}
+
+label {
+  display: block;
+  font-weight: 500;
+  margin-bottom: 0.5rem;
+  color: #2c3e50;
+  font-size: 0.95rem;
+}
+
+.required {
+  color: #e74c3c;
+  margin-left: 0.2rem;
+}
+
+/* Input styling */
+input, select, textarea {
+  width: 100%;
+  padding: 0.8rem 1rem;
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  font-size: 0.95rem;
+  color: #333;
+  background-color: #fff;
+  transition: all 0.2s;
+}
+
+input:focus, select:focus, textarea:focus {
+  outline: none;
+  border-color: #3498db;
+  box-shadow: 0 0 0 3px rgba(52, 152, 219, 0.1);
+}
+
+input.error, select.error, textarea.error {
+  border-color: #e74c3c;
+  background-color: rgba(231, 76, 60, 0.05);
+}
+
+textarea {
+  resize: vertical;
+  min-height: 80px;
+}
+
+.readonly-field {
+  background-color: #f8f9fa;
+  cursor: not-allowed;
+  color: #7f8c8d;
+}
+
+/* Error message styling */
+.error-message {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  color: #e74c3c;
+  font-size: 0.85rem;
+  margin-top: 0.5rem;
+}
+
+/* Input with icon */
+.input-with-icon {
+  position: relative;
+}
+
+.input-icon {
+  position: absolute;
+  left: 1rem;
+  top: 1rem;
+  color: #95a5a6;
+  font-size: 1rem;
+}
+
+.input-with-icon input, .input-with-icon textarea {
+  padding-left: 2.8rem;
+}
+
+/* Search section */
+.search-section {
+  margin-bottom: 0.5rem;
+}
+
+.search-button-container {
+  display: flex;
+  align-items: flex-end;
+  padding-bottom: 0.5rem;
+}
+
+.search-btn {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  padding: 0.8rem 1.5rem;
+  background-color: #3498db;
+  color: white;
+  border: none;
+  border-radius: 8px;
+  font-weight: 500;
+  font-size: 0.95rem;
+  cursor: pointer;
+  transition: all 0.2s;
+  white-space: nowrap;
+}
+
+.search-btn:hover {
+  background-color: #2980b9;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(52, 152, 219, 0.2);
+}
+
+.search-btn:disabled {
+  background-color: #95a5a6;
+  transform: none;
+  box-shadow: none;
+  cursor: not-allowed;
+}
+
+/* Ticket details section */
+.ticket-details-section {
+  background-color: #f8f9fa;
+  border-radius: 8px;
+  padding: 1.5rem;
+  margin-bottom: 1.5rem;
+  border-left: 4px solid #3498db;
+}
+
+/* Form actions */
+.form-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 1rem;
+  margin-top: 1rem;
+}
+
+.reset-btn, .submit-btn {
+  padding: 0.8rem 1.5rem;
+  border-radius: 8px;
+  font-weight: 500;
+  font-size: 0.95rem;
+  cursor: pointer;
+  transition: all 0.2s;
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+}
+
+.reset-btn {
+  background-color: transparent;
+  border: 1px solid #bdc3c7;
+  color: #7f8c8d;
+}
+
+.reset-btn:hover {
+  background-color: #ecf0f1;
+  border-color: #95a5a6;
+}
+
+.submit-btn {
+  background-color: #3498db;
+  border: none;
+  color: white;
+}
+
+.submit-btn:hover {
+  background-color: #2980b9;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(52, 152, 219, 0.2);
+}
+
+.submit-btn:disabled {
+  background-color: #95a5a6;
+  transform: none;
+  box-shadow: none;
+  cursor: not-allowed;
+}
+
+/* Loading spinner */
+.spinner {
+  display: inline-block;
+  width: 1.2rem;
+  height: 1.2rem;
+  border: 2px solid rgba(255, 255, 255, 0.3);
+  border-radius: 50%;
+  border-top-color: #fff;
+  animation: spin 1s ease-in-out infinite;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+/* Response message */
+.response-message {
+  display: flex;
+  align-items: center;
+  gap: 0.8rem;
+  padding: 1rem;
+  border-radius: 8px;
+  margin-bottom: 1.5rem;
+  position: relative;
+}
+
+.response-message.success {
+  background-color: rgba(46, 204, 113, 0.1);
+  border: 1px solid rgba(46, 204, 113, 0.3);
+  color: #27ae60;
+}
+
+.response-message.error {
+  background-color: rgba(231, 76, 60, 0.1);
+  border: 1px solid rgba(231, 76, 60, 0.3);
+  color: #e74c3c;
+}
+
+.response-icon {
+  font-size: 1.2rem;
+}
+
+.close-btn {
+  position: absolute;
+  right: 1rem;
+  top: 50%;
+  transform: translateY(-50%);
+  background: none;
+  border: none;
+  color: currentColor;
+  cursor: pointer;
+  opacity: 0.7;
+}
+
+.close-btn:hover {
+  opacity: 1;
+}
+
+/* Ticket history */
+.ticket-history {
+  margin-top: 2.5rem;
+  padding: 1.5rem;
+  background-color: #f8f9fa;
+  border-radius: 8px;
+}
+
+.ticket-history h3 {
+  font-size: 1.2rem;
+  margin-top: 0;
+  margin-bottom: 1.5rem;
+  color: #2c3e50;
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+}
+
+.history-timeline {
+  position: relative;
+}
+
+.history-item {
+  display: flex;
+  gap: 1.5rem;
+  margin-bottom: 1.5rem;
+}
+
+.history-item:last-child {
+  margin-bottom: 0;
+}
+
+.history-connector {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  width: 24px;
+  position: relative;
+}
+
+.history-dot {
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  background-color: #3498db;
+  margin-top: 6px;
+  z-index: 2;
+}
+
+.history-line {
+  width: 2px;
+  flex-grow: 1;
+  background-color: #bdc3c7;
+  position: absolute;
+  top: 20px;
+  bottom: -30px;
+  left: 50%;
+  transform: translateX(-50%);
+}
+
+.history-content {
+  flex: 1;
+  background-color: white;
+  border-radius: 8px;
+  padding: 1rem;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+}
+
+.history-header {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 0.6rem;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.history-user {
+  font-weight: 600;
+  color: #2c3e50;
+  font-size: 0.95rem;
+}
+
+.history-date {
+  color: #95a5a6;
+  font-size: 0.85rem;
+}
+
+.history-action {
+  color: #2c3e50;
+  margin-bottom: 0.6rem;
+  font-size: 0.95rem;
+}
+
+.history-comment {
+  background-color: #f8f9fa;
+  padding: 0.8rem;
+  border-radius: 6px;
+  display: flex;
+  gap: 0.6rem;
+  align-items: flex-start;
+  color: #7f8c8d;
+  font-size: 0.9rem;
+  line-height: 1.5;
+}
+
+.comment-icon {
+  font-size: 0.9rem;
+  margin-top: 0.2rem;
+  color: #95a5a6;
+  flex-shrink: 0;
+}
+
+/* Tips section */
+.ticket-search-tips {
+  margin-top: 2.5rem;
+  padding: 1.5rem;
+  background-color: #f8f9fa;
+  border-radius: 8px;
+  border-left: 4px solid #3498db;
+}
+
+.ticket-search-tips h3 {
+  font-size: 1.1rem;
+  margin-top: 0;
+  margin-bottom: 0.8rem;
+  color: #2c3e50;
+}
+
+.ticket-search-tips ul {
+  margin: 0;
+  padding-left: 1.5rem;
+}
+
+.ticket-search-tips li {
+  margin-bottom: 0.5rem;
+  color: #7f8c8d;
+}
+
+.ticket-search-tips li:last-child {
+  margin-bottom: 0;
+}
+
+/* Responsive styles */
+@media (max-width: 768px) {
+  .ticket-update-container {
+    padding: 1.5rem;
+    border-radius: 0;
+    box-shadow: none;
   }
   
   .form-group {
-    margin-bottom: 15px;
+    flex-basis: 100%;
   }
   
-  label {
-    font-size: 14px;
-    margin-bottom: 5px;
+  .search-button-container {
+    width: 100%;
+    margin-top: 1rem;
   }
   
-  input, textarea, select {
-    padding: 10px;
-    font-size: 16px;
-    border: 1px solid #ccc;
-    border-radius: 4px;
+  .search-btn {
+    width: 100%;
+    justify-content: center;
   }
   
-  button {
-    padding: 10px;
-    background-color: #3498db;
-    color: white;
-    border: none;
-    border-radius: 5px;
-    cursor: pointer;
+  .form-actions {
+    flex-direction: column;
   }
   
-  button:hover {
-    background-color: #2980b9;
+  .reset-btn, .submit-btn {
+    width: 100%;
+    justify-content: center;
   }
   
+  .history-header {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+}

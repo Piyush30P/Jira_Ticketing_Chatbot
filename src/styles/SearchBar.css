@@ -1,0 +1,186 @@
+/* src/styles/SearchBar.css */
+.global-search {
+    position: relative;
+    width: 100%;
+    max-width: 600px;
+    z-index: 100;
+  }
+  
+  .search-form {
+    width: 100%;
+    position: relative;
+  }
+  
+  .search-input-container {
+    position: relative;
+    width: 100%;
+  }
+  
+  .search-input {
+    width: 100%;
+    padding: 0.8rem 2.8rem;
+    border: 1px solid #e0e0e0;
+    border-radius: 50px;
+    font-size: 0.95rem;
+    background-color: #f5f7fa;
+    transition: all 0.3s ease;
+    color: #2c3e50;
+  }
+  
+  .global-search.active .search-input {
+    background-color: white;
+    border-color: #3498db;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+  }
+  
+  .search-input:focus {
+    outline: none;
+    border-color: #3498db;
+    background-color: white;
+  }
+  
+  .search-icon {
+    position: absolute;
+    left: 1rem;
+    top: 50%;
+    transform: translateY(-50%);
+    color: #95a5a6;
+    font-size: 1rem;
+    z-index: 1;
+    pointer-events: none;
+  }
+  
+  .clear-button {
+    position: absolute;
+    right: 1rem;
+    top: 50%;
+    transform: translateY(-50%);
+    background: none;
+    border: none;
+    color: #95a5a6;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0.4rem;
+    font-size: 0.8rem;
+    border-radius: 50%;
+    transition: all 0.2s;
+  }
+  
+  .clear-button:hover {
+    background-color: rgba(0, 0, 0, 0.05);
+    color: #7f8c8d;
+  }
+  
+  /* Dropdown styling */
+  .search-dropdown {
+    position: absolute;
+    top: calc(100% + 0.5rem);
+    left: 0;
+    right: 0;
+    background-color: white;
+    border-radius: 12px;
+    box-shadow: 0 8px 30px rgba(0, 0, 0, 0.15);
+    overflow: hidden;
+    z-index: 10;
+    max-height: 400px;
+    overflow-y: auto;
+    animation: slideDown 0.2s ease-out forwards;
+  }
+  
+  @keyframes slideDown {
+    from {
+      opacity: 0;
+      transform: translateY(-10px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+  
+  .search-section {
+    padding: 1rem;
+    border-bottom: 1px solid #ecf0f1;
+  }
+  
+  .search-section:last-child {
+    border-bottom: none;
+  }
+  
+  .search-section-title {
+    margin: 0 0 0.8rem 0;
+    font-size: 0.8rem;
+    font-weight: 600;
+    color: #7f8c8d;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+  }
+  
+  .search-list {
+    list-style-type: none;
+    padding: 0;
+    margin: 0;
+  }
+  
+  .search-list li {
+    padding: 0.7rem 1rem;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: background-color 0.2s;
+    display: flex;
+    align-items: center;
+    gap: 0.8rem;
+    font-size: 0.95rem;
+    color: #2c3e50;
+  }
+  
+  .search-list li:hover {
+    background-color: #f5f7fa;
+  }
+  
+  .search-suggestion-icon {
+    color: #95a5a6;
+    font-size: 0.9rem;
+  }
+  
+  .search-footer {
+    background-color: #f8f9fa;
+    padding: 0.8rem 1rem;
+    text-align: center;
+    font-size: 0.8rem;
+    color: #95a5a6;
+  }
+  
+  .search-footer p {
+    margin: 0;
+  }
+  
+  /* Overlay to close search when clicked outside */
+  .search-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-color: rgba(0, 0, 0, 0.2);
+    z-index: 5;
+  }
+  
+  /* Responsive styling */
+  @media (max-width: 768px) {
+    .global-search {
+      max-width: none;
+    }
+    
+    .search-dropdown {
+      position: fixed;
+      top: auto;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      border-radius: 20px 20px 0 0;
+      max-height: 80vh;
+    }
+  }

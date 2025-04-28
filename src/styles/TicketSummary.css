@@ -1,48 +1,204 @@
 /* src/styles/TicketSummary.css */
 .ticket-summary {
-  padding-left: 220px; /* Ensure space for the sidebar */
-  padding-top: 20px;
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 2rem;
 }
 
-h1, h2 {
-  font-family: Arial, sans-serif;
-  color: #555555;
-  text-align: center;
+.ticket-summary-header {
+  display: flex;
+  align-items: center;
+  margin-bottom: 2.5rem;
 }
 
-.ticket-form-container {
-  background-color: #f5f5f5;
-  padding: 20px;
-  margin-bottom: 30px;
-  border-radius: 15px; /* Rounded background */
-  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1); /* Light shadow for elevation */
-  width: 60%; /* Control the width */
-  margin: 0 auto; /* Center the container */
-}
-
-.ticket-form-container h2 {
-  font-size: 1.5em;
-  margin-bottom: 15px;
-}
-
-input, textarea, select {
-  width: 100%;
-  padding: 10px;
-  margin-bottom: 10px;
-  border: 1px solid #ccc;
-  border-radius: 5px;
-}
-
-button {
-  width: 100%;
-  background-color: #555555;
+.header-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 60px;
+  height: 60px;
+  background-color: #3498db;
   color: white;
-  border: none;
-  padding: 10px;
-  cursor: pointer;
-  border-radius: 5px;
+  border-radius: 50%;
+  font-size: 1.8rem;
+  margin-right: 1.5rem;
+  flex-shrink: 0;
 }
 
-button:hover {
-  background-color: #b929296e;
+.header-content h1 {
+  font-size: 2rem;
+  color: #2c3e50;
+  margin: 0 0 0.5rem 0;
+  font-weight: 600;
+  text-align: left;
+}
+
+.header-content p {
+  color: #7f8c8d;
+  font-size: 1.1rem;
+  margin: 0;
+}
+
+/* Tab system */
+.tab-container {
+  background-color: white;
+  border-radius: 12px;
+  box-shadow: 0 5px 20px rgba(0, 0, 0, 0.05);
+  margin-bottom: 2.5rem;
+  overflow: hidden;
+}
+
+.tabs {
+  display: flex;
+  background-color: #f8f9fa;
+  border-bottom: 1px solid #e0e0e0;
+}
+
+.tab {
+  display: flex;
+  align-items: center;
+  gap: 0.8rem;
+  padding: 1.2rem 2rem;
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-size: 1rem;
+  font-weight: 500;
+  color: #7f8c8d;
+  border-bottom: 3px solid transparent;
+  transition: all 0.2s;
+}
+
+.tab:hover {
+  background-color: rgba(0, 0, 0, 0.02);
+  color: #2c3e50;
+}
+
+.tab.active {
+  color: #3498db;
+  border-bottom-color: #3498db;
+  background-color: white;
+}
+
+.tab-icon {
+  font-size: 1.1rem;
+}
+
+.tab-content {
+  padding: 2rem;
+}
+
+/* Form container - minimal styling since TicketCreation and TicketUpdate have their own styles */
+.ticket-form-container {
+  width: 100%;
+  margin: 0;
+  background: none;
+  padding: 0;
+  box-shadow: none;
+}
+
+/* Info panel */
+.info-panel {
+  background-color: #ebf5fe;
+  border-radius: 12px;
+  padding: 1.5rem;
+  display: flex;
+  gap: 1.5rem;
+  margin-bottom: 2rem;
+  border-left: 4px solid #3498db;
+}
+
+.info-icon {
+  font-size: 2rem;
+  color: #3498db;
+  flex-shrink: 0;
+  display: flex;
+  align-items: flex-start;
+}
+
+.info-content h3 {
+  font-size: 1.2rem;
+  margin: 0 0 1rem 0;
+  color: #2c3e50;
+}
+
+.info-content p {
+  color: #555;
+  margin-bottom: 0.8rem;
+  line-height: 1.5;
+}
+
+.info-content p:last-child {
+  margin-bottom: 0;
+}
+
+/* Override button styling from the imported component CSS */
+.ticket-summary button {
+  width: auto;
+  background-color: inherit;
+  color: inherit;
+}
+
+.ticket-summary button:hover {
+  background-color: inherit;
+}
+
+/* Responsive styles */
+@media (max-width: 768px) {
+  .ticket-summary {
+    padding: 1.5rem;
+  }
+  
+  .ticket-summary-header {
+    flex-direction: column;
+    text-align: center;
+    gap: 1rem;
+  }
+  
+  .header-icon {
+    margin-right: 0;
+  }
+  
+  .header-content h1 {
+    text-align: center;
+  }
+  
+  .tabs {
+    flex-direction: column;
+  }
+  
+  .tab {
+    justify-content: center;
+    border-bottom: none;
+    border-left: 3px solid transparent;
+  }
+  
+  .tab.active {
+    border-bottom-color: transparent;
+    border-left-color: #3498db;
+  }
+  
+  .tab-content {
+    padding: 1.5rem;
+  }
+  
+  .info-panel {
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+  }
+}
+
+@media (max-width: 480px) {
+  .ticket-summary {
+    padding: 1rem;
+  }
+  
+  .tab {
+    padding: 1rem;
+  }
+  
+  .tab-content {
+    padding: 1rem;
+  }
 }
