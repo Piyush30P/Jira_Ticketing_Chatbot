@@ -30,6 +30,8 @@
     padding: 20px;
     overflow-y: auto;
     background-color: #f0f0f0;
+    display: flex;
+    flex-direction: column;
 }
 
 /* Message bubbles */
@@ -37,9 +39,8 @@
     padding: 10px 15px;
     margin: 10px 0;
     border-radius: 8px;
-    max-width: 20%;
+    max-width: 80%; /* Increased to accommodate tables */
     word-wrap: break-word;
-    display: flex; /* Use flex for aligning */
 }
 
 /* User message */
@@ -56,6 +57,12 @@
     background-color: #e0e0e0;
     color: #333;
     border: 1px solid #cccccc;
+    width: auto;
+}
+
+/* When bot message contains a table, make it wider */
+.bot .message-content {
+    width: 100%;
 }
 
 /* Input area styling */
@@ -101,9 +108,75 @@
     border-radius: 50%;
     cursor: pointer;
     font-size: 24px;
-  }
+}
   
-  .voice-btn:hover {
+.voice-btn:hover {
     background-color: #45a049;
-  }
-  
+}
+
+/* Ticket table styling */
+.ticket-table-container {
+    width: 100%;
+    overflow-x: auto;
+    margin-top: 10px;
+}
+
+.ticket-table-container h2 {
+    font-size: 1.2em;
+    margin-bottom: 8px;
+    color: #333;
+    text-align: center;
+}
+
+.ticket-table {
+    width: 100%;
+    border-collapse: collapse;
+    background-color: white;
+    border-radius: 5px;
+    overflow: hidden;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+    margin-bottom: 10px;
+}
+
+.ticket-table th {
+    background-color: #555555;
+    color: white;
+    text-align: left;
+    padding: 12px;
+    font-weight: 500;
+}
+
+.ticket-table td {
+    padding: 10px 12px;
+    border-bottom: 1px solid #e0e0e0;
+}
+
+.ticket-table tr:last-child td {
+    border-bottom: none;
+}
+
+.ticket-table tr:nth-child(even) {
+    background-color: #f9f9f9;
+}
+
+.ticket-table tr:hover {
+    background-color: #f0f0f0;
+}
+
+/* Original message fallback */
+.original-message {
+    padding: 10px;
+    background-color: #f5f5f5;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    margin-top: 10px;
+    font-style: italic;
+    color: #555;
+}
+
+/* Loading indicator */
+.loading-indicator {
+    font-size: 1.2em;
+    padding: 10px;
+    color: #777;
+}
