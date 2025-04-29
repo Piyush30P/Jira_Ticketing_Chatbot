@@ -1,7 +1,3 @@
-Here's the updated and complete README file with your requested changes, including the creation and activation of a virtual environment (`venv`) and installing dependencies from `requirements.txt`.
-
----
-
 # Project Setup Guide
 
 ## Step 1: PostgreSQL Installation and Setup
@@ -118,7 +114,29 @@ Make sure you have a `requirements.txt` file in the same directory, then run:
 pip install -r requirements.txt
 ```
 
-### 3.5 Run the Flask App  
+### 3.5 Create .env File
+Create a file named `.env` in the `Jira_Ticketing_Chatbot\backend\chatbot\chatbot` directory with the following format:
+
+```
+# Database configuration
+DB_NAME=test_db
+DB_USER=admin_user
+DB_PASSWORD=admin
+DB_HOST=localhost
+DB_PORT=5432
+
+# Generative AI API Key
+GENAI_API_KEY=<paste_your_gemini_api_key_here>
+
+# Jira API credentials
+JIRA_API_TOKEN=<paste_your_jira_api_token_here>
+JIRA_EMAIL=<paste_your_jira_email_here>
+JIRA_BASE_URL=<paste_your_jira_base_url_here>
+```
+
+> ⚠️ Make sure to replace the placeholder values with your actual credentials.
+
+### 3.6 Run the Flask App  
 ```bash
 python app.py
 ```
@@ -142,4 +160,3 @@ Navigate to:
 🔗 http://localhost:3000
 
 ---
-
