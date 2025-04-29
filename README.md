@@ -127,7 +127,10 @@ python app.py
 
 ## Step 4: Frontend Setup and Execution
 
-### 4.1 Open a New Terminal  
+### 4.1 Open a New Terminal (Optional : If libraries are not installed)
+```bash
+npm install
+```
 
 ### 4.2 Start React App  
 ```bash
